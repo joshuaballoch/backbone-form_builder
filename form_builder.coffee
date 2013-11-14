@@ -3,6 +3,7 @@ String.prototype.capitalize = ->
 
 class Backbone.FormBuilder
   constructor: (@model) ->
+    @resource_name = @model.paramRoot || @model.constructor.name.split(/(?=[A-Z])/).join("_").toLowerCase()
 
   text_field:     (attribute, options) -> @input 'text',     attribute, options
   password_field: (attribute, options) -> @input 'password', attribute, options
@@ -31,21 +32,31 @@ class Backbone.FormBuilder
     @new_el('p', {}, $el).html()
 
   # choices should be an object {value: name}
-  select: (attribute, choices = {}, options = {}) ->
+  select: (attribute, choices = [], options = {}) ->
+    that = @
     _.defaults options,
+      name: "#{@resource_name}[#{attribute}]"
       include_blank: false
 
-    select = @new_el 'select', name: attribute
-    for value, name of choices
+    select = @new_el 'select', options
+
+    # if include_blank then add a blank option with include_blank
+    select.append @new_el('option', "", options.include_blank) if options.include_blank
+
+    choices.forEach (entry) ->
+      value = entry[1]
+      name = entry[0]
       attrs = value: value
-      attrs.selected = "selected" if @model.get(attribute) is value
-      select.append @new_el('option', attrs, name)
-    @new_el('p', {}, select).html()
+      attrs.selected = "selected" if that.model.get(attribute) is value
+      select.append that.new_el('option', attrs, name)
+
+    that.new_el('p', {}, select).html()
 
   input: (type, attribute, options = {}) ->
+    that = @
     _.defaults options,
-      name:        attribute
-      class:       attribute
+      name:        "#{that.resource_name}[#{attribute}]"
+      #class:       attribute
       placeholder: attribute.split("_").join(" ").capitalize()
       type:        type
       value:       @model.get attribute
@@ -66,7 +77,7 @@ class Backbone.FormBuilder
     @new_el('p', {}, field).html()
 
   id_for: (attribute) ->
-    "#{@model.constructor.name.toLowerCase()}_#{attribute}"
+    "#{@resource_name}_#{attribute}"
 
   errors_for: (attribute, options) ->
     if errors = @model.validationError?[attribute]
