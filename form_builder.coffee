@@ -43,12 +43,13 @@ class Backbone.FormBuilder
     # if include_blank then add a blank option with include_blank
     select.append @new_el('option', "", options.include_blank) if options.include_blank
 
-    choices.forEach (entry) ->
-      value = entry[1]
-      name = entry[0]
-      attrs = value: value
-      attrs.selected = "selected" if that.model.get(attribute) is value
-      select.append that.new_el('option', attrs, name)
+    for entry in choices
+      do (entry) ->
+        value = entry[1]
+        name = entry[0]
+        attrs = value: value
+        attrs.selected = "selected" if that.model.get(attribute) is value
+        select.append that.new_el('option', attrs, name)
 
     that.new_el('p', {}, select).html()
 
